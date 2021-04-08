@@ -148,7 +148,8 @@ print('Success! The example took {} seconds.'.format(duration))
 #
 # **GOAL:** The goal of this exercise is to show how to pass object IDs into remote functions to encode dependencies between tasks.
 #
-# In this exercise, we construct a sequence of tasks, each of which depends on the previous, mimicking a data parallel application. Within each sequence, tasks are executed serially, but multiple sequences can be executed in parallel.
+# In this exercise, we construct a sequence of tasks, each of which depends on the previous, mimicking a data parallel application.
+# Within each sequence, tasks are executed serially, but multiple sequences can be executed in parallel.
 #
 # In this exercise, you will use Ray to parallelize the computation below and speed it up.
 #
@@ -174,7 +175,8 @@ print('Success! The example took {} seconds.'.format(duration))
 # [1, 2, 3]
 # ```
 #
-# **Object IDs** can also be passed into remote functions. When the function actually gets executed, **the argument will be a retrieved as a regular Python object**.
+# **Object IDs** can also be passed into remote functions. When the function actually gets executed,
+# **the argument will be a retrieved as a regular Python object**.
 #
 # ```python
 # >>> y1_id = f.remote(x1_id)
@@ -186,30 +188,39 @@ print('Success! The example took {} seconds.'.format(duration))
 # [1, 2, 3]
 # ```
 #
-# So when implementing a remote function, the function should expect a regular Python object regardless of whether the caller passes in a regular Python object or an object ID.
+# So when implementing a remote function, the function should expect a regular Python object regardless of whether the caller passes
+# in a regular Python object or an object ID.
 #
-# **Task dependencies affect scheduling.** In the example above, the task that creates `y1_id` depends on the task that creates `x1_id`. This has the following implications.
-#
+# **Task dependencies affect scheduling.** In the example above, the task that creates `y1_id` depends on the task that
+# creates `x1_id`. This has the following implications:
 # - The second task will not be executed until the first task has finished executing.
-# - If the two tasks are scheduled on different machines, the output of the first task (the value corresponding to `x1_id`) will be copied over the network to the machine where the second task is scheduled.
+# - If the two tasks are scheduled on different machines, the output of the first task (the value corresponding to `x1_id`)
+#   will be copied over the network to the machine where the second task is scheduled.
 
 # These are some helper functions that mimic an example pattern of a data parallel application.
 #
-# **EXERCISE:** You will need to turn all of these functions into remote functions. When you turn these functions into remote function, you do not have to worry about whether the caller passes in an object ID or a regular object. In both cases, the arguments will be regular objects when the function executes. This means that even if you pass in an object ID, you **do not need to call `ray.get`** inside of these remote functions.
+# **EXERCISE:** You will need to turn all of these functions into remote functions. When you turn these functions into
+# remote function, you do not have to worry about whether the caller passes in an object ID or a regular object.
+# In both cases, the arguments will be regular objects when the function executes. This means that even if you pass in an object
+# ID, you **do not need to call `ray.get`** inside of these remote functions.
 
 
+@ray.remote
 def load_data(filename):
     time.sleep(0.1)
     return np.ones((1000, 100))
 
+@ray.remote
 def normalize_data(data):
     time.sleep(0.1)
     return data - np.mean(data, axis=0)
 
+@ray.remote
 def extract_features(normalized_data):
     time.sleep(0.1)
     return np.hstack([normalized_data, normalized_data ** 2])
 
+@ray.remote
 def compute_loss(features):
     num_data, dim = features.shape
     time.sleep(0.1)
