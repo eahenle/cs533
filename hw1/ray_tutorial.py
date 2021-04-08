@@ -116,7 +116,8 @@ def slow_function(i):
 time.sleep(10.0)
 start_time = time.time()
 
-results = [ray.get(ray_id) for ray_id in [slow_function.remote(i) for i in range(4)]]
+result_ids = [slow_function.remote(i) for i in range(4)]
+results = [ray.get(ray_id) for ray_id in result_ids]
 
 end_time = time.time()
 duration = end_time - start_time
