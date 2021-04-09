@@ -1,0 +1,7 @@
+running map reduce with 4 cpus
+Congratulations, the test passed!
+Congratulations, the test passed!
+
+calling reduce_parallel_tree
+reduce time: 0.9087913036346436
+total time: 1.9194364547729492
