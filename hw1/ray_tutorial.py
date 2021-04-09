@@ -416,11 +416,15 @@ print('Success! The example took {} seconds.'.format(duration))
 #
 # See the documentation for ray.wait at https://ray.readthedocs.io/en/latest/api.html#ray.wait.
 #
-# This script starts 6 tasks, each of which takes a random amount of time to complete. We'd like to process the results in two batches (each of size 3). Change the code so that instead of waiting for a fixed set of 3 tasks to finish, we make the first batch consist of the first 3 tasks that complete. The second batch should consist of the 3 remaining tasks. Do this exercise by using `ray.wait`.
+# This script starts 6 tasks, each of which takes a random amount of time to complete. We'd like to process the results
+# in two batches (each of size 3). Change the code so that instead of waiting for a fixed set of 3 tasks to finish,
+# we make the first batch consist of the first 3 tasks that complete. The second batch should consist of the 3 remaining
+# tasks. Do this exercise by using `ray.wait`.
 #
 # ### Concepts for this Exercise - ray.wait
 #
-# After launching a number of tasks, you may want to know which ones have finished executing. This can be done with `ray.wait`. The function works as follows.
+# After launching a number of tasks, you may want to know which ones have finished executing.
+# This can be done with `ray.wait`. The function works as follows.
 #
 # ```python
 # ready_ids, remaining_ids = ray.wait(object_ids, num_returns=1, timeout=None)
@@ -429,15 +433,14 @@ print('Success! The example took {} seconds.'.format(duration))
 # **Arguments:**
 # - `object_ids`: This is a list of object IDs.
 # - `num_returns`: This is maximum number of object IDs to wait for. The default value is `1`.
-# - `timeout`: This is the maximum amount of time in milliseconds to wait for. So `ray.wait` will block until either `num_returns` objects are ready or until `timeout` milliseconds have passed.
+# - `timeout`: This is the maximum amount of time in milliseconds to wait for. So `ray.wait`
+# will block until either `num_returns` objects are ready or until `timeout` milliseconds have passed.
 #
 # **Return values:**
 # - `ready_ids`: This is a list of object IDs that are available in the object store.
 # - `remaining_ids`: This is a list of the IDs that were in `object_ids` but are not in `ready_ids`, so the IDs in `ready_ids` and `remaining_ids` together make up all the IDs in `object_ids`.
 
 # Define a remote function that takes a variable amount of time to run.
-
-# In[16]:
 
 
 @ray.remote
@@ -448,7 +451,8 @@ def f(i):
     return i, time.time()
 
 
-# **EXERCISE:** Using `ray.wait`, change the code below so that `initial_results` consists of the outputs of the first three tasks to complete instead of the first three tasks that were submitted.
+# **EXERCISE:** Using `ray.wait`, change the code below so that `initial_results` consists of the outputs
+# of the first three tasks to complete instead of the first three tasks that were submitted.
 
 # Sleep a little to improve the accuracy of the timing measurements below.
 time.sleep(2.0)
@@ -459,7 +463,8 @@ start_time = time.time()
 result_ids = [f.remote(i) for i in range(6)]
 # Get one batch of tasks. Instead of waiting for a fixed subset of tasks, we
 # should instead use the first 3 tasks that finish.
-initial_results = ray.get(result_ids[:3])
+ready_ids, remaining_ids = ray.wait(result_ids, num_returns=3)
+initial_results = ray.get(ready_ids)
 
 end_time = time.time()
 duration = end_time - start_time
@@ -467,14 +472,13 @@ duration = end_time - start_time
 
 # **EXERCISE:** Change the code below so that `remaining_results` consists of the outputs of the last three tasks to complete.
 
-# In[18]:
-
 
 # Wait for the remaining tasks to complete.
-remaining_results = ray.get(result_ids[3:])
+remaining_results = ray.get(remaining_ids)
 
 
-# **VERIFY:** Run some checks to verify that the changes you made to the code were correct. Some of the checks should fail when you initially run the cells. After completing the exercises, the checks should pass.
+# **VERIFY:** Run some checks to verify that the changes you made to the code were correct.
+# Some of the checks should fail when you initially run the cells. After completing the exercises, the checks should pass.
 
 
 assert len(initial_results) == 3
