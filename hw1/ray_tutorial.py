@@ -260,7 +260,7 @@ for filename in ['file1', 'file2', 'file3', 'file4']:
                         'Make sure to only call ray.get once outside of the for loop.')
 
 print('The losses are {}.'.format(losses) + '\n')
-loss = sum(losses)
+loss = sum([ray.get(loss) for loss in losses])
 
 end_time = time.time()
 duration = end_time - start_time
