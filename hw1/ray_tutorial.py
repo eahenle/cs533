@@ -288,11 +288,15 @@ print('Success! The example took {} seconds.'.format(duration))
 #
 # See the documentation on actors at http://ray.readthedocs.io/en/latest/actors.html.
 #
-# Sometimes you need a "worker" process to have "state". For example, that state might be a neural network, a simulator environment, a counter, or something else entirely. However, remote functions are side-effect free. That is, they operate on inputs and produce outputs, but they don't change the state of the worker they execute on.
+# Sometimes you need a "worker" process to have "state". For example, that state might be a neural network,
+# a simulator environment, a counter, or something else entirely. However, remote functions are side-effect free.
+# That is, they operate on inputs and produce outputs, but they don't change the state of the worker they execute on.
 #
-# Actors are different. When we instantiate an actor, a brand new worker is created, and all methods that are called on that actor are executed on the newly created worker.
+# Actors are different. When we instantiate an actor, a brand new worker is created, and all methods
+# that are called on that actor are executed on the newly created worker.
 #
-# This means that with a single actor, no parallelism can be achieved because calls to the actor's methods will be executed one at a time. However, multiple actors can be created and methods can be executed on them in parallel.
+# This means that with a single actor, no parallelism can be achieved because calls to the actor's methods
+# will be executed one at a time. However, multiple actors can be created and methods can be executed on them in parallel.
 #
 # ### Concepts for this Exercise - Actors
 #
@@ -327,7 +331,8 @@ print('Success! The example took {} seconds.'.format(duration))
 #     >>> e.get.remote()
 #     ObjectID(7c432c085864ed4c7c18cf112377a608676afbc3)
 #     ```
-# 3. **Return Values:** Actor methods are non-blocking. They immediately return an object ID and **they create a task which is scheduled on the actor worker**. The result can be retrieved with `ray.get`.
+# 3. **Return Values:** Actor methods are non-blocking. They immediately return an object ID and **they create a task which is scheduled on the actor worker**.
+#       The result can be retrieved with `ray.get`.
 #     ```python
 #     >>> ray.get(e.set.remote(2))
 #     None
@@ -340,7 +345,7 @@ print('Success! The example took {} seconds.'.format(duration))
 
 # In[12]:
 
-
+@ray.remote
 class Foo(object):
     def __init__(self):
         self.counter = 0
@@ -360,8 +365,8 @@ assert hasattr(Foo, 'remote'), 'You need to turn "Foo" into an actor with @ray.r
 
 
 # Create two Foo objects.
-f1 = Foo()
-f2 = Foo()
+f1 = Foo.remote()
+f2 = Foo.remote()
 
 
 # **EXERCISE:** Parallelize the code below. The two actors can execute methods in parallel (though each actor can only execute one method at a time).
@@ -373,8 +378,8 @@ start_time = time.time()
 
 # Reset the actor state so that we can run this cell multiple times without
 # changing the results.
-f1.reset()
-f2.reset()
+f1.reset.remote()
+f2.reset.remote()
 
 # We want to parallelize this code. However, it is not straightforward to
 # make "increment" a remote function, because state is shared (the value of
@@ -382,8 +387,10 @@ f2.reset()
 # makes sense to use actors.
 results = []
 for _ in range(5):
-    results.append(f1.increment())
-    results.append(f2.increment())
+    results.append(f1.increment.remote())
+    results.append(f2.increment.remote())
+
+results = [ray.get(result) for result in results]
 
 end_time = time.time()
 duration = end_time - start_time
