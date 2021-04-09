@@ -232,12 +232,11 @@ assert hasattr(extract_features, 'remote'), 'extract_features must be a remote f
 assert hasattr(compute_loss, 'remote'), 'compute_loss must be a remote function'
 
 
-# **EXERCISE:** The loop below takes too long. Parallelize the four passes through the loop by turning `load_data`, `normalize_data`, `extract_features`, and `compute_loss` into remote functions and then retrieving the losses with `ray.get`.
+# **EXERCISE:** The loop below takes too long. Parallelize the four passes through the loop by turning `load_data`,
+# `normalize_data`, `extract_features`, and `compute_loss` into remote functions and then retrieving the losses with `ray.get`.
 #
-# **NOTE:** You should only use **ONE** call to `ray.get`. For example, the object ID returned by `load_data` should be passed directly into `normalize_data` without needing to be retrieved by the driver.
-
-# In[10]:
-
+# **NOTE:** You should only use **ONE** call to `ray.get`. For example, the object ID returned by `load_data` should be passed
+# directly into `normalize_data` without needing to be retrieved by the driver.
 
 # Sleep a little to improve the accuracy of the timing measurements below.
 time.sleep(2.0)
@@ -247,10 +246,10 @@ losses = []
 for filename in ['file1', 'file2', 'file3', 'file4']:
     inner_start = time.time()
 
-    data = load_data(filename)
-    normalized_data = normalize_data(data)
-    features = extract_features(normalized_data)
-    loss = compute_loss(features)
+    data = load_data.remote(filename)
+    normalized_data = normalize_data.remote(data)
+    features = extract_features.remote(normalized_data)
+    loss = compute_loss.remote(features)
     losses.append(loss)
 
     inner_end = time.time()
@@ -270,10 +269,8 @@ print('The loss is {}. This took {} seconds. Run the next cell to see '
       'if the exercise was done correctly.'.format(loss, duration))
 
 
-# **VERIFY:** Run some checks to verify that the changes you made to the code were correct. Some of the checks should fail when you initially run the cells. After completing the exercises, the checks should pass.
-
-# In[11]:
-
+# **VERIFY:** Run some checks to verify that the changes you made to the code were correct. Some of the checks should fail when you initially run the cells.
+# After completing the exercises, the checks should pass.
 
 assert loss == 4000
 assert duration < 0.8, ('The loop took {} seconds. This is too slow.'
