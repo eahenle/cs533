@@ -194,7 +194,14 @@ class ModelServer():
         return all_results
 
 
-def main(nb_agents=4, nb_evaluators=2):
+def main():
+    if len(sys.argv) == 3:
+        nb_agents = sys.argv[1]
+        nb_evaluators = sys.argv[2]
+    else:
+        nb_agents = 4
+        nb_evaluators = 2
+
     if not os.path.isdir(result_folder):
         os.mkdir(result_folder)
 
@@ -223,4 +230,4 @@ def main(nb_agents=4, nb_evaluators=2):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main()
