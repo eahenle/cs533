@@ -176,7 +176,7 @@ class ModelServer():
     def learn(self, test_interval):
         # determine which collectors are idle
         ready_agents, _ = ray.wait([agent.pingback.remote() for agent in self.agents], num_returns=1)
-        print("FOO BAR {}".ready_agents)
+        print("FOO BAR {}".format(ready_agents))
         # send eval model to idle collectors, initiate collection
         for agent in ready_agents:
             agent.collect.remote(self.eval_model, test_interval)
