@@ -97,18 +97,19 @@ class DQN_agent_remote(object):
 
 @ray.remote
 class EvalWorker():
-    def __init__(self, eval_model, env, max_episode_steps, evaluator_id):
+    def __init__(self, eval_model, env, max_episode_steps, eval_trials, evaluator_id):
         self.eval_model = eval_model
         self.env = env
         self.max_episode_steps = max_episode_steps
         self.evaluator_id = evaluator_id
+        self.trials = eval_trials
     
     def greedy_policy(self, state):
         return self.eval_model.predict(state)
 
-    def evaluate(self, trials = 3):
+    def evaluate(self):
         total_reward = 0
-        for _ in tqdm(range(trials), desc="Evaluating"):
+        for _ in tqdm(range(self.trials), desc="Evaluating"):
             state = self.env.reset()
             done = False
             steps = 0
@@ -117,7 +118,7 @@ class EvalWorker():
                 action = self.greedy_policy(state)
                 state, reward, done, _ = self.env.step(action)
                 total_reward += reward
-        avg_reward = total_reward / trials
+        avg_reward = total_reward / self.trials
         print(avg_reward)
         return avg_reward
 
@@ -147,7 +148,8 @@ class ModelServer():
         self.target_model = DQNModel(input_len, output_len)
 
         self.agents = [DQN_agent_remote.remote(CartPoleEnv(), memory_server, hyper_params, action_space, i) for i in range(nb_agents)]
-        self.evaluators = [EvalWorker.remote(self.eval_model, CartPoleEnv(), hyper_params['max_episode_steps'], i) for i in range(nb_evaluators)]
+        self.evaluators = [EvalWorker.remote(
+            self.eval_model, CartPoleEnv(), hyper_params['max_episode_steps'], hyper_params['eval_trials'], i) for i in range(nb_evaluators)]
 
     # Linear decrease function for epsilon
     def linear_decrease(self, initial_value, final_value, curr_steps, final_decay_steps):
@@ -239,11 +241,12 @@ def main():
             'model_replace_freq' : 2000,
             'learning_rate' : 0.0003,
             'use_target_model': True,
-            'max_episode_steps' : 500
+            'max_episode_steps' : 500,
+            'eval_trials' : 30
     }
 
     # training_episodes, test_interval = 10000, 50 ## TODO restore
-    training_episodes, test_interval, hps['batch_size'] = 10, 2, 1 ## TODO remove
+    training_episodes, test_interval, hps['batch_size'], hps['eval_trials'] = 30, 6, 2, 1 ## TODO remove
 
     print("\n\n\tDISTRIBUTED DQN\n\nHyper-parameters:\n{}\n\nTraining episodes: {}\nTest interval: {}\n# agents: {}\n# evaluators: {}\n".format(
         hps, training_episodes, test_interval, nb_agents, nb_evaluators
