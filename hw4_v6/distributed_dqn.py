@@ -48,7 +48,7 @@ def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators):
 
 @ray.remote
 class DQN_agent_remote(object):
-    def __init__(self, env, hyper_params, action_space, agent_id):
+    def __init__(self, env, memory_server, hyper_params, action_space, agent_id):
         self.env = env
         self.max_episode_steps = env._max_episode_steps
         self.beta = hyper_params['beta']
@@ -62,6 +62,7 @@ class DQN_agent_remote(object):
         self.action_space = action_space
         self.update_steps = hyper_params['update_steps']
         self.agent_id = agent_id
+        self.memory_server = memory_server
     
     def explore_or_exploit_policy(self, state, epsilon):
         p = uniform(0, 1)
@@ -85,7 +86,7 @@ class DQN_agent_remote(object):
                 # add experience from explore-exploit policy to memory
                 action = self.explore_or_exploit_policy(state, epsilon)
                 state_next, reward, done, _ = self.env.step(action)
-                self.memory.add(state, action, reward, state_next, done)
+                self.memory_server.add.remote(state, action, reward, state_next, done)
                 state = state_next
                 steps += 1
 
@@ -140,7 +141,7 @@ class ModelServer():
         self.eval_model = DQNModel(input_len, output_len, learning_rate = hyper_params['learning_rate'])
         self.target_model = DQNModel(input_len, output_len)
 
-        self.agents = [DQN_agent_remote.remote(CartPoleEnv(), hyper_params, action_space, i) for i in range(nb_agents)]
+        self.agents = [DQN_agent_remote.remote(CartPoleEnv(), memory_server, hyper_params, action_space, i) for i in range(nb_agents)]
         self.evaluators = [EvalWorker.remote(self.eval_model, CartPoleEnv(), hyper_params['max_episode_steps']) for i in range(nb_evaluators)]
 
     # Linear decrease function for epsilon
