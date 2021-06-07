@@ -12,6 +12,7 @@ import io
 import base64
 import matplotlib.pyplot as plt
 import sys
+from time import sleep
 
 from custom_cartpole import CartPoleEnv
 from memory_remote import ReplayBuffer_remote
@@ -123,6 +124,7 @@ class EvalWorker():
 
 class ModelServer():
     def __init__(self, hyper_params, memory_server, nb_agents, nb_evaluators, action_space=len(ACTION_DICT)):
+        self.beta = hyper_params['beta']
         self.initial_epsilon = 1
         self.final_epsilon = hyper_params['final_epsilon']
         self.epsilon_decay_steps = hyper_params['epsilon_decay_steps']
@@ -243,9 +245,15 @@ def main():
         hps, training_episodes, test_interval, nb_agents, nb_evaluators
     ))
 
+    print("Instantiating...")
     ddqn = ModelServer(hps, ReplayBuffer_remote.remote(hps['memory_size']), nb_agents, nb_evaluators)
+    sleep(1)
+    print("Training...")
     result = ddqn.learn_and_evaluate(training_episodes, test_interval)
+    sleep(1)
+    print("Saving results...")
     plot_result(result, test_interval, nb_agents, nb_evaluators)
+    print("Done!")
 
 
 if __name__ == "__main__":
