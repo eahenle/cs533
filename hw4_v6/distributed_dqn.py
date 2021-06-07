@@ -98,10 +98,11 @@ class DQN_agent_remote(object):
 
 @ray.remote
 class EvalWorker():
-    def __init__(self, eval_model, env, max_episode_steps):
+    def __init__(self, eval_model, env, max_episode_steps, evaluator_id):
         self.eval_model = eval_model
         self.env = env
         self.max_episode_steps = max_episode_steps
+        self.evaluator_id = evaluator_id
     
     def greedy_policy(self, state):
         return self.eval_model.predict(state)
@@ -120,6 +121,9 @@ class EvalWorker():
         avg_reward = total_reward / trials
         print(avg_reward)
         return avg_reward
+
+    def pingback(self):
+        return self.evaluator_id
 
 
 class ModelServer():
@@ -144,7 +148,7 @@ class ModelServer():
         self.target_model = DQNModel(input_len, output_len)
 
         self.agents = [DQN_agent_remote.remote(CartPoleEnv(), memory_server, hyper_params, action_space, i) for i in range(nb_agents)]
-        self.evaluators = [EvalWorker.remote(self.eval_model, CartPoleEnv(), hyper_params['max_episode_steps']) for i in range(nb_evaluators)]
+        self.evaluators = [EvalWorker.remote(self.eval_model, CartPoleEnv(), hyper_params['max_episode_steps'], i) for i in range(nb_evaluators)]
 
     # Linear decrease function for epsilon
     def linear_decrease(self, initial_value, final_value, curr_steps, final_decay_steps):
@@ -178,10 +182,14 @@ class ModelServer():
         for agent_id in ready_agents:
             self.agents[agent_id].collect.remote(self.eval_model, test_interval, epsilon)
 
-    def evaluate(self):
+    def evaluate(self, all_results):
         # determine which evaluators are idle
+        ready_ids, _ = ray.wait([evaluator.pingback.remote() for evaluator in self.evaluators], num_returns=1)
+        ready_evaluators = ray.get(ready_ids)
         # send eval model to idle evaluators, get results
-        pass ## TODO
+        for evaluator_id in ready_evaluators:
+            avg_reward = ray.get(self.evaluators[evaluator_id].evaluate.remote())
+            all_results.append(avg_reward)
     
     def learn_and_evaluate(self, training_episodes, test_interval):
         test_number = training_episodes // test_interval
@@ -202,8 +210,7 @@ class ModelServer():
             if self.steps  % self.model_replace_freq == 0:
                 self.target_model.replace(self.eval_model)
             # send eval model to evaluators, record results
-            avg_reward = self.evaluate()
-            all_results.append(avg_reward)
+            self.evaluate(all_results)
         return all_results
 
 
