@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import gym
 import torch
 import time
