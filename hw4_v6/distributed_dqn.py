@@ -49,7 +49,7 @@ def plot_result(total_rewards, learning_num, legend, nb_agents, nb_evaluators):
 
 @ray.remote
 class DQN_agent_remote(object):
-    def __init__(self, env, hyper_params, eval_model, target_model, action_space):
+    def __init__(self, env, hyper_params, eval_model, action_space):
         self.env = env
         self.max_episode_steps = env._max_episode_steps
         self.beta = hyper_params['beta']
@@ -61,11 +61,7 @@ class DQN_agent_remote(object):
         self.best_reward = 0
         self.learning = True
         self.action_space = action_space
-        state = env.reset()
-        input_len = len(state)
-        output_len = action_space
-        self.eval_model = DQNModel(input_len, output_len, learning_rate = hyper_params['learning_rate'])
-        self.target_model = DQNModel(input_len, output_len)
+        self.eval_model = eval_model
         self.update_steps = hyper_params['update_steps']
     
     def explore_or_exploit_policy(self, state):
@@ -86,7 +82,7 @@ class DQN_agent_remote(object):
         return self.eval_model.predict(state)
 
     def learn(self, test_interval):
-        for episode in tqdm(range(test_interval), desc="Training"):
+        for _ in tqdm(range(test_interval), desc="Training"):
             state = self.env.reset()
             done = False
             steps = 0
@@ -144,7 +140,7 @@ class ModelServer():
         self.eval_model = DQNModel(input_len, output_len, learning_rate = hyper_params['learning_rate'])
         self.target_model = DQNModel(input_len, output_len)
 
-        self.agents = [DQN_agent_remote.remote() for i in range(nb_agents)]
+        self.agents = [DQN_agent_remote.remote(CartPoleEnv(), hyper_params, self.eval_model, action_space) for i in range(nb_agents)]
         self.evaluators = [EvalWorker.remote() for i in range(nb_evaluators)]
 
     # Linear decrease function for epsilon
