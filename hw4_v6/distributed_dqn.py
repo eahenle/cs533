@@ -31,7 +31,7 @@ result_file = ENV_NAME + "/results.txt"
 
 
 # Plot results.
-def plot_result(total_rewards, learning_num, legend, nb_agents, nb_evaluators):
+def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators):
     print("\nLearning Performance:\n")
     episodes = []
     for i in range(len(total_rewards)):
