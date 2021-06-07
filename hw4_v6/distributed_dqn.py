@@ -123,6 +123,7 @@ class EvalWorker():
 class ModelServer():
     def __init__(self, hyper_params, memory_server, nb_agents, nb_evaluators, action_space=len(ACTION_DICT)):
         self.initial_epsilon = 1
+        self.final_epsilon = hyper_params['final_epsilon']
         self.hyper_params = hyper_params
         self.update_steps = hyper_params['update_steps']
         self.model_replace_freq = hyper_params['model_replace_freq']
