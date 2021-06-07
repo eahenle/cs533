@@ -229,6 +229,10 @@ def main():
 
     training_episodes, test_interval = 10000, 50
 
+    print("\n\n\tDISTRIBUTED DQN\n\nHyper-parameters:\n{}\n\nTraining episodes: {}\nTest interval: {}\n# agents: {}\n# evaluators: {}\n".format(
+        hps, test_interval, nb_agents, nb_evaluators
+    ))
+
     ddqn = ModelServer(hps, ReplayBuffer_remote.remote(hps['memory_size']), nb_agents, nb_evaluators)
     result = ddqn.learn_and_evaluate(training_episodes, test_interval)
     plot_result(result, test_interval, nb_agents, nb_evaluators)
