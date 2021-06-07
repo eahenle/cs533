@@ -165,10 +165,7 @@ class ModelServer():
         _, q_values = self.eval_model.predict_batch(states)
         q_values = q_values[batch_index, actions]        
         # Calculate target
-        if self.use_target_model:
-            actions, q_next = self.target_model.predict_batch(next_states)
-        else:
-            actions, q_next = self.eval_model.predict_batch(next_states)
+        actions, q_next = self.target_model.predict_batch(next_states)
         q_targets = reward + nonterminal_x_beta * torch.max(q_next, 1).values
         # update model
         self.eval_model.fit(q_values, q_targets)
