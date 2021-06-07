@@ -151,7 +151,7 @@ class ModelServer():
         return initial_value - (initial_value - final_value) * decay_rate
 
     def update_batch(self):
-        batch = self.memory_server.sample(self.batch_size)
+        batch = self.memory_server.sample.remote(self.batch_size)
         (states, actions, reward, next_states, is_terminal) = batch
         states = states
         next_states = next_states
