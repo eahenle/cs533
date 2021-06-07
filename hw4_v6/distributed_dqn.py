@@ -141,7 +141,7 @@ class ModelServer():
         self.target_model = DQNModel(input_len, output_len)
 
         self.agents = [DQN_agent_remote.remote(CartPoleEnv(), hyper_params, self.eval_model, action_space) for i in range(nb_agents)]
-        self.evaluators = [EvalWorker.remote() for i in range(nb_evaluators)]
+        self.evaluators = [EvalWorker.remote(self.eval_model, CartPoleEnv(), hyper_params['max_episode_steps']) for i in range(nb_evaluators)]
 
     # Linear decrease function for epsilon
     def linear_decrease(self, initial_value, final_value, curr_steps, final_decay_steps):
@@ -215,7 +215,8 @@ def main():
             'beta' : 0.99, 
             'model_replace_freq' : 2000,
             'learning_rate' : 0.0003,
-            'use_target_model': True
+            'use_target_model': True,
+            'max_episode_steps' : 500
     }
 
     training_episodes, test_interval = 10000, 50
