@@ -63,13 +63,8 @@ class DQN_agent_remote(object):
         self.update_steps = hyper_params['update_steps']
         self.agent_id = agent_id
     
-    def explore_or_exploit_policy(self, state):
+    def explore_or_exploit_policy(self, state, epsilon):
         p = uniform(0, 1)
-        # Get decreased epsilon
-        epsilon = self.linear_decrease(self.initial_epsilon, 
-                               self.final_epsilon,
-                               self.steps,
-                               self.epsilon_decay_steps)
         if p < epsilon:
             #return action
             return randint(0, self.action_space - 1)
@@ -80,7 +75,7 @@ class DQN_agent_remote(object):
     def greedy_policy(self, state):
         return self.eval_model.predict(state)
 
-    def collect(self, eval_model, test_interval):
+    def collect(self, eval_model, test_interval, epsilon):
         self.eval_model = eval_model
         for _ in tqdm(range(test_interval), desc="Training"):
             state = self.env.reset()
@@ -88,7 +83,7 @@ class DQN_agent_remote(object):
             steps = 0
             while steps < self.max_episode_steps and not done: # INSERTED MY CODE HERE
                 # add experience from explore-exploit policy to memory
-                action = self.explore_or_exploit_policy(state)
+                action = self.explore_or_exploit_policy(state, epsilon)
                 state_next, reward, done, _ = self.env.step(action)
                 self.memory.add(state, action, reward, state_next, done)
                 state = state_next
@@ -173,13 +168,13 @@ class ModelServer():
         # update model
         self.eval_model.fit(q_values, q_targets)
 
-    def learn(self, test_interval):
+    def learn(self, test_interval, epsilon):
         # determine which collectors are idle
         ready_ids, _ = ray.wait([agent.pingback.remote() for agent in self.agents], num_returns=1)
         ready_agents = ray.get(ready_ids)
         # send eval model to idle collectors, initiate collection
         for agent_id in ready_agents:
-            self.agents[agent_id].collect.remote(self.eval_model, test_interval)
+            self.agents[agent_id].collect.remote(self.eval_model, test_interval, epsilon)
 
     def evaluate(self):
         # determine which evaluators are idle
@@ -190,8 +185,13 @@ class ModelServer():
         test_number = training_episodes // test_interval
         all_results = []
         for i in range(test_number):
+            # Get decreased epsilon
+            epsilon = self.linear_decrease(self.initial_epsilon, 
+                               self.final_epsilon,
+                               self.steps,
+                               self.epsilon_decay_steps)
             # send eval model to collectors, have them collect experience
-            self.learn(test_interval)
+            self.learn(test_interval, epsilon)
             # sample experience from memory server, perform batch update on eval model
             if i % self.update_steps == 0:
                 self.update_batch()
