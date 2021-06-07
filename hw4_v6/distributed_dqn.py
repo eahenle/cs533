@@ -83,6 +83,20 @@ class DQN_agent_remote(object):
     def greedy_policy(self, state):
         return self.eval_model.predict(state)
 
+    def learn(self, test_interval):
+        for episode in tqdm(range(test_interval), desc="Training"):
+            state = self.env.reset()
+            done = False
+            steps = 0
+            while steps < self.max_episode_steps and not done: # INSERTED MY CODE HERE
+                # add experience from explore-exploit policy to memory
+                action = self.explore_or_exploit_policy(state)
+                state_next, reward, done, _ = self.env.step(action)
+                self.memory.add(state, action, reward, state_next, done)
+                state = state_next
+                steps += 1
+                
+
 
 @ray.remote
 class EvalWorker():
@@ -111,13 +125,25 @@ class EvalWorker():
 
 
 class ModelServer():
-    def __init__(self, env, hyper_params, memory_server, nb_agents, nb_evaluators, action_space=len(ACTION_DICT)):
+    def __init__(self, hyper_params, memory_server, nb_agents, nb_evaluators, action_space=len(ACTION_DICT)):
+
         self.hyper_params = hyper_params
+        self.update_steps = hyper_params['update_steps']
         self.model_replace_freq = hyper_params['model_replace_freq']
         self.action_space = action_space
         self.batch_size = hyper_params['batch_size']
         self.memory_server = memory_server
-        ## TODO spin up agents and evaluators
+        self.nb_agents = nb_agents
+        self.nb_evaluators = nb_evaluators
+        env = CartPoleEnv()
+        state = env.reset()
+        input_len = len(state)
+        output_len = action_space
+        self.eval_model = DQNModel(input_len, output_len, learning_rate = hyper_params['learning_rate'])
+        self.target_model = DQNModel(input_len, output_len)
+
+        self.agents = [DQN_agent_remote() for i in range(nb_agents)]
+        self.evaluators = [EvalWorker() for i in range(nb_evaluators)]
 
     # Linear decrease function for epsilon
     def linear_decrease(self, initial_value, final_value, curr_steps, final_decay_steps):
@@ -133,10 +159,9 @@ class ModelServer():
         (states, actions, reward, next_states, is_terminal) = batch
         states = states
         next_states = next_states
-        nonterminal_x_beta = FloatTensor([0 if t else self.beta for t in is_terminal]) # MODIFIED THIS LINE
+        nonterminal_x_beta = FloatTensor([0 if t else self.beta for t in is_terminal])
         reward = FloatTensor(reward)
-        batch_index = torch.arange(self.batch_size,
-                                   dtype=torch.long)
+        batch_index = torch.arange(self.batch_size, dtype=torch.long)
         # Current Q Values
         _, q_values = self.eval_model.predict_batch(states)
         q_values = q_values[batch_index, actions]        
@@ -145,35 +170,23 @@ class ModelServer():
             actions, q_next = self.target_model.predict_batch(next_states)
         else:
             actions, q_next = self.eval_model.predict_batch(next_states)
-        q_targets = reward + nonterminal_x_beta * torch.max(q_next, 1).values # INSERTED MY CODE HERE
+        q_targets = reward + nonterminal_x_beta * torch.max(q_next, 1).values
         # update model
         self.eval_model.fit(q_values, q_targets)
     
-    def learn(self, test_interval):
-        for episode in tqdm(range(test_interval), desc="Training"):
-            state = self.env.reset()
-            done = False
-            steps = 0
-            while steps < self.max_episode_steps and not done: # INSERTED MY CODE HERE TODO distribute
-                # add experience from explore-exploit policy to memory
-                action = self.explore_or_exploit_policy(state)
-                state_next, reward, done, _ = self.env.step(action)
-                self.memory.add(state, action, reward, state_next, done)
-                state = state_next
-                # update the model every 'update_steps' of experience
-                if steps % self.update_steps == 0:
-                    self.update_batch()
-                # update the target network (if the target network is being used) every 'model_replace_freq' of experiences 
-                if self.use_target_model and steps % self.model_replace_freq == 0:
-                    self.target_model.replace(self.eval_model)
-
     def learn_and_evaluate(self, training_episodes, test_interval):
         test_number = training_episodes // test_interval
         all_results = []
         for i in range(test_number):
-            # learn
+            # send eval model to collectors, have them collect experience
             self.learn(test_interval)
-            # evaluate
+            # sample experience from memory server, perform batch update on eval model
+            if i % self.update_steps == 0:
+                self.update_batch()
+            # replace target model
+            if i % self.model_replace_freq == 0:
+                self.target_model.replace(self.eval_model)
+            # send eval model to evaluators, record results
             avg_reward = self.evaluate()
             all_results.append(avg_reward)
         return all_results
@@ -202,10 +215,9 @@ def main(nb_agents=4, nb_evaluators=2):
 
     training_episodes, test_interval = 10000, 50
 
-    memory_server = ReplayBuffer_remote(hps['memory_size'])
-    ddqn = ModelServer(CartPoleEnv(), hps, memory_server, nb_agents, nb_evaluators)
+    ddqn = ModelServer(hps, ReplayBuffer_remote(hps['memory_size']), nb_agents, nb_evaluators)
     result = ddqn.learn_and_evaluate.remote(training_episodes, test_interval)
-    plot_result(ray.get(result), test_interval, nb_agents, nb_evaluators)
+    plot_result(result, test_interval, nb_agents, nb_evaluators)
 
 
 if __name__ == "__main__":
