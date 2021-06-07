@@ -106,7 +106,7 @@ class EvalWorker():
     def greedy_policy(self, state):
         return self.eval_model.predict(state)
 
-    def evaluate(self, trials = 30):
+    def evaluate(self, trials = 3):
         total_reward = 0
         for _ in tqdm(range(trials), desc="Evaluating"):
             state = self.env.reset()
