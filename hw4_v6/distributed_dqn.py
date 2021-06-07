@@ -174,6 +174,11 @@ class ModelServer():
         # determine which collectors are idle
         # send eval model to idle collectors, initiate collection
         pass ## TODO
+
+    def evaluate(self):
+        # determine which evaluators are idle
+        # send eval model to idle evaluators, get results
+        pass ## TODO
     
     def learn_and_evaluate(self, training_episodes, test_interval):
         test_number = training_episodes // test_interval
