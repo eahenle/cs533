@@ -12,7 +12,7 @@ import io
 import base64
 import matplotlib.pyplot as plt
 import sys
-from time import sleep
+from time import sleep, time
 
 from custom_cartpole import CartPoleEnv
 from memory_remote import ReplayBuffer_remote
@@ -32,7 +32,7 @@ result_file = ENV_NAME + "/results.txt"
 
 
 # Plot results.
-def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators):
+def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators, runtime):
     episodes = []
     for i in range(len(total_rewards)):
         episodes.append(i * learning_num + 1)
@@ -40,7 +40,7 @@ def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators):
     plt.figure(num = 1)
     fig, ax = plt.subplots()
     plt.plot(episodes, total_rewards)
-    plt.title('performance')
+    plt.title('{} agents, {} evaluators. {} seconds}'.format(nb_agents, nb_evaluators, runtime))
     plt.xlabel("Episodes")
     plt.ylabel("total rewards")
     plt.savefig("{}agents_{}evaluators".format(nb_agents, nb_evaluators))
@@ -234,7 +234,7 @@ def main():
     hps = {
             'epsilon_decay_steps' : 100000, 
             'final_epsilon' : 0.1,
-            'batch_size' : 32, 
+            'batch_size' : 100, 
             'update_steps' : 10, 
             'memory_size' : 2000, 
             'beta' : 0.99, 
@@ -242,11 +242,10 @@ def main():
             'learning_rate' : 0.0003,
             'use_target_model': True,
             'max_episode_steps' : 500,
-            'eval_trials' : 30
+            'eval_trials' : 1
     }
 
-    # training_episodes, test_interval = 10000, 50 ## TODO restore
-    training_episodes, test_interval, hps['batch_size'], hps['eval_trials'] = 10000, 1000, 10, 1 ## TODO remove
+    training_episodes, test_interval = 10000, 50
 
     print("\n\n\tDISTRIBUTED DQN\n\nHyper-parameters:\n{}\n\nTraining episodes: {}\nTest interval: {}\n# agents: {}\n# evaluators: {}\n".format(
         hps, training_episodes, test_interval, nb_agents, nb_evaluators
@@ -257,13 +256,15 @@ def main():
     sleep(1)
 
     print("\nRunning...")
+    start_time = time()
     result = ddqn.learn_and_evaluate(training_episodes, test_interval)
+    runtime = time() - start_time
     sleep(1)
     
     print("Saving results...")
-    plot_result(result, test_interval, nb_agents, nb_evaluators)
+    plot_result(result, test_interval, nb_agents, nb_evaluators, runtime)
     
-    print("Done!")
+    print("Done! Ran in {} seconds.".format(runtime))
 
 
 if __name__ == "__main__":
