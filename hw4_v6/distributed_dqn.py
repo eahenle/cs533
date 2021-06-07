@@ -153,7 +153,8 @@ class ModelServer():
     def update_batch(self):
         batch = self.memory_server.sample.remote(self.batch_size)
         (states, actions, reward, next_states, is_terminal) = ray.get(batch)
-        print("FOO BAR {}".format(len(states)))
+        if len(states) < self.batch_size:
+            return
         nonterminal_x_beta = FloatTensor([0 if t else self.beta for t in is_terminal])
         reward = FloatTensor(reward)
         batch_index = torch.arange(self.batch_size, dtype=torch.long)
