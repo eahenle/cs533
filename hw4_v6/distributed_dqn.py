@@ -224,7 +224,7 @@ def main():
 
     training_episodes, test_interval = 10000, 50
 
-    ddqn = ModelServer(hps, ReplayBuffer_remote(hps['memory_size']), nb_agents, nb_evaluators)
+    ddqn = ModelServer(hps, ReplayBuffer_remote.remote(hps['memory_size']), nb_agents, nb_evaluators)
     result = ddqn.learn_and_evaluate.remote(training_episodes, test_interval)
     plot_result(result, test_interval, nb_agents, nb_evaluators)
 
