@@ -178,8 +178,8 @@ class ModelServer():
         ready_ids, _ = ray.wait([agent.pingback.remote() for agent in self.agents], num_returns=1)
         ready_agents = ray.get(ready_ids)
         # send eval model to idle collectors, initiate collection
-        for agent in self.agents[ready_agents]:
-            agent.collect.remote(self.eval_model, test_interval)
+        for agent_id in ready_agents:
+            self.agents[agent_id].collect.remote(self.eval_model, test_interval)
 
     def evaluate(self):
         # determine which evaluators are idle
