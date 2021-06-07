@@ -64,5 +64,6 @@ class ReplayBuffer_remote(object):
             done_mask[i] = 1 if executing act_batch[i] resulted in
             the end of an episode and 0 otherwise.
         """
-        idxes = [random.randint(0, len(self._storage) - 1) for _ in range(batch_size)]
+        sample_size = min(batch_size, len(self._storage))
+        idxes = [random.randint(0, len(self._storage) - 1) for _ in range(sample_size)]
         return self._encode_sample(idxes)
