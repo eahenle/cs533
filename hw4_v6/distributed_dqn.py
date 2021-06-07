@@ -217,8 +217,8 @@ class ModelServer():
 
 def main():
     if len(sys.argv) == 3:
-        nb_agents = sys.argv[1]
-        nb_evaluators = sys.argv[2]
+        nb_agents = int(sys.argv[1])
+        nb_evaluators = int(sys.argv[2])
     else:
         nb_agents = 4
         nb_evaluators = 2
