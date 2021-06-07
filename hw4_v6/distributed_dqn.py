@@ -41,7 +41,6 @@ def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators):
     fig, ax = plt.subplots()
     plt.plot(episodes, total_rewards)
     plt.title('performance')
-    plt.legend(legend)
     plt.xlabel("Episodes")
     plt.ylabel("total rewards")
     plt.savefig("{}agents_{}evaluators".format(nb_agents, nb_evaluators))
