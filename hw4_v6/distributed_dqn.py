@@ -172,7 +172,7 @@ class ModelServer():
         # update model
         self.eval_model.fit(q_values, q_targets)
 
-    def learn(self):
+    def learn(self, test_interval):
         # determine which collectors are idle
         # send eval model to idle collectors, initiate collection
         pass ## TODO
