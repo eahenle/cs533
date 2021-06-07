@@ -33,7 +33,6 @@ result_file = ENV_NAME + "/results.txt"
 
 # Plot results.
 def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators):
-    print("\nLearning Performance:\n")
     episodes = []
     for i in range(len(total_rewards)):
         episodes.append(i * learning_num + 1)
@@ -244,7 +243,7 @@ def main():
     }
 
     # training_episodes, test_interval = 10000, 50 ## TODO restore
-    training_episodes, test_interval, hps['batch_size'] = 1, 1, 1 ## TODO remove
+    training_episodes, test_interval, hps['batch_size'] = 10, 2, 1 ## TODO remove
 
     print("\n\n\tDISTRIBUTED DQN\n\nHyper-parameters:\n{}\n\nTraining episodes: {}\nTest interval: {}\n# agents: {}\n# evaluators: {}\n".format(
         hps, training_episodes, test_interval, nb_agents, nb_evaluators
@@ -253,11 +252,14 @@ def main():
     print("Instantiating...")
     ddqn = ModelServer(hps, ReplayBuffer_remote.remote(hps['memory_size']), nb_agents, nb_evaluators)
     sleep(1)
-    print("Training...")
+
+    print("\nRunning...")
     result = ddqn.learn_and_evaluate(training_episodes, test_interval)
     sleep(1)
+    
     print("Saving results...")
     plot_result(result, test_interval, nb_agents, nb_evaluators)
+    
     print("Done!")
 
 
