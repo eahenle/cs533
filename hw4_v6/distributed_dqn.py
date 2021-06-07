@@ -186,6 +186,7 @@ class ModelServer():
         test_number = training_episodes // test_interval
         all_results = []
         for i in range(test_number):
+            self.steps = i * test_interval
             # Get decreased epsilon
             epsilon = self.linear_decrease(self.initial_epsilon, 
                                self.final_epsilon,
@@ -194,10 +195,10 @@ class ModelServer():
             # send eval model to collectors, have them collect experience
             self.learn(test_interval, epsilon)
             # sample experience from memory server, perform batch update on eval model
-            if i % self.update_steps == 0:
+            if self.steps  % self.update_steps == 0:
                 self.update_batch()
             # replace target model
-            if i % self.model_replace_freq == 0:
+            if self.steps  % self.model_replace_freq == 0:
                 self.target_model.replace(self.eval_model)
             # send eval model to evaluators, record results
             avg_reward = self.evaluate()
