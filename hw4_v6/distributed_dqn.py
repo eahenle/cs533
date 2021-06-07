@@ -236,7 +236,8 @@ def main():
             'max_episode_steps' : 500
     }
 
-    training_episodes, test_interval = 10000, 50
+    # training_episodes, test_interval = 10000, 50 ## TODO restore
+    training_episodes, test_interval, hps['batch_size'] = 1, 1, 1 ## TODO remove
 
     print("\n\n\tDISTRIBUTED DQN\n\nHyper-parameters:\n{}\n\nTraining episodes: {}\nTest interval: {}\n# agents: {}\n# evaluators: {}\n".format(
         hps, training_episodes, test_interval, nb_agents, nb_evaluators
