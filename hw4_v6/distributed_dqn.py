@@ -48,7 +48,7 @@ def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators):
 
 @ray.remote
 class DQN_agent_remote(object):
-    def __init__(self, env, hyper_params, action_space):
+    def __init__(self, env, hyper_params, action_space, agent_id):
         self.env = env
         self.max_episode_steps = env._max_episode_steps
         self.beta = hyper_params['beta']
@@ -61,6 +61,7 @@ class DQN_agent_remote(object):
         self.learning = True
         self.action_space = action_space
         self.update_steps = hyper_params['update_steps']
+        self.agent_id = agent_id
     
     def explore_or_exploit_policy(self, state):
         p = uniform(0, 1)
@@ -94,7 +95,7 @@ class DQN_agent_remote(object):
                 steps += 1
 
     def pingback(self):
-        return
+        return self.agent_id
                 
 
 
@@ -142,7 +143,7 @@ class ModelServer():
         self.eval_model = DQNModel(input_len, output_len, learning_rate = hyper_params['learning_rate'])
         self.target_model = DQNModel(input_len, output_len)
 
-        self.agents = [DQN_agent_remote.remote(CartPoleEnv(), hyper_params, action_space) for i in range(nb_agents)]
+        self.agents = [DQN_agent_remote.remote(CartPoleEnv(), hyper_params, action_space, i) for i in range(nb_agents)]
         self.evaluators = [EvalWorker.remote(self.eval_model, CartPoleEnv(), hyper_params['max_episode_steps']) for i in range(nb_evaluators)]
 
     # Linear decrease function for epsilon
@@ -175,6 +176,7 @@ class ModelServer():
     def learn(self, test_interval):
         # determine which collectors are idle
         ready_agents, _ = ray.wait([agent.pingback.remote() for agent in self.agents], num_returns=1)
+        print("FOO BAR {}".ready_agents)
         # send eval model to idle collectors, initiate collection
         for agent in ready_agents:
             agent.collect.remote(self.eval_model, test_interval)
