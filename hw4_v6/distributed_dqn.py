@@ -40,7 +40,7 @@ def plot_result(total_rewards, learning_num, nb_agents, nb_evaluators, runtime):
     plt.figure(num = 1)
     fig, ax = plt.subplots()
     plt.plot(episodes, total_rewards)
-    plt.title('{} agents, {} evaluators. {} seconds}'.format(nb_agents, nb_evaluators, runtime))
+    plt.title('{} agents, {} evaluators. {} seconds'.format(nb_agents, nb_evaluators, runtime))
     plt.xlabel("Episodes")
     plt.ylabel("total rewards")
     plt.savefig("{}agents_{}evaluators".format(nb_agents, nb_evaluators))
