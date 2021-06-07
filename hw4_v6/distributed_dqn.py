@@ -144,8 +144,8 @@ class ModelServer():
         self.eval_model = DQNModel(input_len, output_len, learning_rate = hyper_params['learning_rate'])
         self.target_model = DQNModel(input_len, output_len)
 
-        self.agents = [DQN_agent_remote() for i in range(nb_agents)]
-        self.evaluators = [EvalWorker() for i in range(nb_evaluators)]
+        self.agents = [DQN_agent_remote.remote() for i in range(nb_agents)]
+        self.evaluators = [EvalWorker.remote() for i in range(nb_evaluators)]
 
     # Linear decrease function for epsilon
     def linear_decrease(self, initial_value, final_value, curr_steps, final_decay_steps):
