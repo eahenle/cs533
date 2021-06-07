@@ -223,4 +223,4 @@ def main(nb_agents=4, nb_evaluators=2):
 
 
 if __name__ == "__main__":
-    main(sys.args[1], sys.args[2])
+    main(sys.argv[1], sys.argv[2])
