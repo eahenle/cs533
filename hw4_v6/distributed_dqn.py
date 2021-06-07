@@ -171,6 +171,11 @@ class ModelServer():
         q_targets = reward + nonterminal_x_beta * torch.max(q_next, 1).values
         # update model
         self.eval_model.fit(q_values, q_targets)
+
+    def learn(self):
+        # determine which collectors are idle
+        # send eval model to idle collectors, initiate collection
+        pass ## TODO
     
     def learn_and_evaluate(self, training_episodes, test_interval):
         test_number = training_episodes // test_interval
